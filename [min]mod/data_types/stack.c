@@ -161,7 +161,18 @@ struct StackElem instr_to_stack_elem(instr_id_t instr, int indirection_level)
         return stack_elem;
 }
 
-struct StackElem stack_to_stack_elem(struct Stack * substack, int indirection_level)
+struct StackElem create_stack_ref(struct Stack * stack, int indirection_level)
+{
+        struct StackElem stack_elem;
+        stack_elem.type = STACK_ELEM_STACK_REF;
+        stack_elem.indirection_level = indirection_level;
+
+        stack_elem.stack_ref = stack;
+
+        return stack_elem;
+}
+
+struct StackElem create_substack(struct Stack * substack, int indirection_level)
 {
         struct StackElem stack_elem;
         stack_elem.type = STACK_ELEM_SUBSTACK;
@@ -192,8 +203,8 @@ static void log_n_times(int log_level, char ch, int count)
 }
 
 static void log_stack_elem(int log_level,
-                              const struct StackElem * stack_elem,
-                              const struct List * itype_list)
+                           const struct StackElem * stack_elem,
+                           const struct List * itype_list)
 {
         switch (stack_elem->type) {
         case STACK_ELEM_INSTR: {
@@ -206,6 +217,10 @@ static void log_stack_elem(int log_level,
 
                         LOG(log_level, "%s", itype->name);
                 }
+                break;
+        case STACK_ELEM_STACK_REF:
+                LOG(log_level, "&");
+                log_stack_backwards(log_level, stack_elem->stack_ref, itype_list);
                 break;
         case STACK_ELEM_SUBSTACK:
                 log_stack_backwards(log_level, stack_elem->substack, itype_list);
