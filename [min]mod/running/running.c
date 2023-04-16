@@ -102,31 +102,14 @@ static enum ErrState move_instr(struct List * itype_list,
                 dest = deepcopy_stack(arg1->substack);
         }
 
-        struct StackElem * arg2 = stack_peek(data_stack, 1);
-        struct Stack * src;
-        if (arg2->type == STACK_ELEM_INSTR) {
-                ASSERT_OR_HANDLE(!is_builtin(arg2->instr), ERR_FAILURE,
-                                 "Cannot move from a built-in.");
+        struct StackElem * src = stack_peek(data_stack, 1);
 
-                struct IType * itype = get_list_elem(itype_list, arg2->instr);
-                src = itype->value;
-
-                ASSERT_OR_HANDLE(dest, ERR_FAILURE, "Cannot move from uninitialized stack.");
-        } else {
-                LOG_WARNING("Useless move from stack literal.", g_builtin_names[1]);
-                src = deepcopy_stack(arg2->substack);
-        }
-
-        ASSERT_OR_HANDLE(src->size > 0, ERR_FAILURE, "Cannot move from empty stack.");
-
-        struct StackElem * src_top = stack_peek(src, 0);
-        stack_push(dest, src_top);
-        stack_pop(src);
+        stack_push(dest, src);
 
         stack_pop(data_stack);
         stack_pop(data_stack);
 
-        return ERR_FAILURE;
+        return ERR_SUCCESS;
 }
 
 static enum ErrState if_instr(struct List * itype_list,
