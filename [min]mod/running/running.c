@@ -75,7 +75,7 @@ static enum ErrState set_instr(struct List * itype_list,
         struct Stack * new_val = get_stack_elem_val(arg2, itype_list);
         if (arg2->type == STACK_ELEM_SUBSTACK) {
                 new_val = deepcopy_stack(new_val);
-        } else {
+        } else if (new_val) {
                 add_stack_reference(new_val);
         }
 
