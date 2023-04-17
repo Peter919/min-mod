@@ -223,8 +223,7 @@ static void log_stack_elem(int log_level,
                 }
                 break;
         case STACK_ELEM_STACK_REF:
-                LOG(log_level, "&");
-                log_stack_backwards(log_level, stack_elem->stack_ref, itype_list);
+                LOG(log_level, "(stack reference)");
                 break;
         case STACK_ELEM_SUBSTACK:
                 log_stack_backwards(log_level, stack_elem->substack, itype_list);
