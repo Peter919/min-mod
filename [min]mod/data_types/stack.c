@@ -169,6 +169,8 @@ struct StackElem create_stack_ref(struct Stack * stack, int indirection_level)
 
         stack_elem.stack_ref = stack;
 
+        add_stack_reference(stack);
+
         return stack_elem;
 }
 
@@ -179,6 +181,8 @@ struct StackElem create_substack(struct Stack * substack, int indirection_level)
         stack_elem.indirection_level = indirection_level;
 
         stack_elem.substack = substack;
+
+        add_stack_reference(substack);
 
         return stack_elem;
 }
