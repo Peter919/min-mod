@@ -57,6 +57,8 @@ static void destroy_stack_elem(struct StackElem * elem)
 {
         if (elem->type == STACK_ELEM_SUBSTACK) {
                 remove_stack_reference(elem->substack);
+        } else if (elem->type == STACK_ELEM_STACK_REF) {
+                remove_stack_reference(elem->stack_ref);
         }
 }
 
@@ -77,12 +79,6 @@ void destroy_stack_void_ptr(void * stack)
 
 static void resize_stack(struct Stack * stack, size_t new_size)
 {
-        if (new_size < stack->size) {
-                for (size_t i = new_size; i < stack->size; ++i) {
-                        destroy_stack_elem(&stack->contents[i]);
-                }
-        }
-
         while (new_size > stack->capacity) {
                 stack->capacity *= STACK_CAPACITY_MULTIPLIER;
         }
@@ -98,6 +94,8 @@ void stack_push(struct Stack * stack, const struct StackElem * stack_elem)
 
         if (stack_elem->type == STACK_ELEM_SUBSTACK) {
                 add_stack_reference(stack_elem->substack);
+        } else if (stack_elem->type == STACK_ELEM_STACK_REF) {
+                add_stack_reference(stack_elem->stack_ref);
         }
 }
 
