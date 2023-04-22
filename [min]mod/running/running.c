@@ -144,6 +144,12 @@ static enum ErrState if_instr(struct List * itype_list,
                "Cannot perform %s instruction on uninitialized stack.", g_builtin_names[2]);
 
         if (arg_val->size == 0) {
+
+                ASSERT_OR_HANDLE(data_stack->size >= 2, ERR_FAILURE,
+                                 "%s instruction on empty stack requires data stack with 2 "
+                                 "elements or more, got %d.",
+                                 g_builtin_names[2], data_stack->size);
+
                 stack_pop(data_stack);
                 stack_pop(data_stack);
         } else {
@@ -166,8 +172,12 @@ static enum ErrState step(struct List * itype_list,
         struct IType * data_stack_itype = get_list_elem(itype_list, data_stack_instr);
         struct Stack * data_stack = data_stack_itype->value;
 
+        ASSERT_OR_HANDLE(data_stack, ERR_FAILURE, "Data stack uninitialized.");
+
         struct IType * instr_stack_itype = get_list_elem(itype_list, instr_stack_instr);
         struct Stack * instr_stack = instr_stack_itype->value;
+
+        ASSERT_OR_HANDLE(instr_stack, ERR_FAILURE, "Instruction stack uninitialized.");
 
         if (instr_stack->size == 0) {
                 return ERR_SUCCESS;
@@ -194,7 +204,6 @@ static enum ErrState step(struct List * itype_list,
                 ++substack_top->indirection_level;
 
                 pop_from_instr_substack(instr_stack, instr_substack);
-
                 return ERR_UNFINISHED;
         }
 
