@@ -1,4 +1,4 @@
-# min-mod
+# [min]mod
 A self-modifying language where everything is a stack of instructions.
 
 Run using the path to the `.[m]m` program as the argument. Undefine `NDEBUG` in `tools\debug.h` to run in debug mode.
