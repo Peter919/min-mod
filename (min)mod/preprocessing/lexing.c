@@ -148,7 +148,7 @@ static struct List string_to_tokens(const char * string, const char * fname)
 
 // Returns "true" iff the "TOK_STACK_OPEN"s and "TOK_STACK_CLOSE"s are balanced.
 // Assumes all tokens in "tokens" belong to the same file.
-static bool are_brackets_balanced(const struct List * tokens)
+static bool are_parens_balanced(const struct List * tokens)
 {
         int nesting_level = 0;
         for (int i = 0; i < tokens->length; ++i) {
@@ -303,8 +303,8 @@ static struct List tokenize_file(char * file_path, struct List * tokenized_files
         remove_tokens_of_type(&token_list, TOK_WHITESPACE);
         remove_tokens_of_type(&token_list, TOK_COMMENT);
 
-        ASSERT_OR_HANDLE(are_brackets_balanced(&token_list), create_invalid_list(),
-                         "Unbalanced brackets in \"%s\".", file_path);
+        ASSERT_OR_HANDLE(are_parens_balanced(&token_list), create_invalid_list(),
+                         "Unbalanced parentheses in \"%s\".", file_path);
 
         bool imports_ok = evaluate_imports(&token_list, tokenized_files);
 
