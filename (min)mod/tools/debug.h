@@ -6,6 +6,8 @@
 #include <stdlib.h>
 #include <time.h>
 
+#define NDEBUG
+
 // The compiler isn't able to correctly check for equality between
 // compile-time constants and enumerated constants, so these are
 // "#define"d.
