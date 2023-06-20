@@ -184,46 +184,53 @@ static bool str_in_list(const struct List * str_list, const char * str)
 
 static struct List tokenize_file(char * file_path, struct List * tokenized_files);
 
-static char * get_abs_import_path(const char * fpath, const char * import)
+// Like "strdup", but it uses the "ALLOC" macro rather than "malloc".
+static char * duplicate_str(const char * str)
 {
-        if (import[0] != '.') {
-                char * import_cpy = ALLOC(char, strlen(import) + 1);
-                strcpy(import_cpy, import);
-                return import_cpy;
-        }
-
-        char * dir = get_file_dir(fpath);
-
-        // If "import" starts with "..".
-        if (import[1] != '.') {
-
-                const char * import_fname = import + 1;
-
-                char * abs_import_path = ALLOC(char, strlen(dir) + strlen(import_fname) + 1);
-                abs_import_path[0] = '\0';
-                strcat(abs_import_path, dir);
-                strcat(abs_import_path, import_fname);
-
-                FREE(dir);
-
-                return abs_import_path;
-        }
-
-        char * parent_dir = get_file_dir(dir);
-        const char * import_fname = import + 2;
-
-        char * abs_import_path = ALLOC(char, strlen(parent_dir) + strlen(import_fname) + 1);
-        abs_import_path[0] = '\0';
-        strcat(abs_import_path, parent_dir);
-        strcat(abs_import_path, import_fname);
-
-        FREE(dir);
-        FREE(parent_dir);
-
-        return abs_import_path;
+        char * new_str = ALLOC(char, strlen(str) + 1);
+        strcpy(new_str, str);
+        return new_str;
 }
 
-static void evaluate_imports(struct List * tokens, struct List * tokenized_files)
+static char * get_nth_parent_dir(const char * fpath, int parent_count)
+{
+        char * curr_parent = duplicate_str(fpath);
+        for (int i = 0; i < parent_count; ++i) {
+                char * next_parent = get_parent_dir(curr_parent);
+
+                ASSERT_OR_HANDLE(next_parent, NULL,
+                                 "\"%s\" has no parent directory.", curr_parent);
+
+                FREE(curr_parent);
+                curr_parent = next_parent;
+        }
+
+        return curr_parent;
+}
+
+static char * get_abs_import_path(const char * fpath, const char * import)
+{
+        int parent_count = 0;
+        for (int i = 0; import[i] == '.'; ++i) {
+                ++parent_count;
+        }
+
+        const char * child_path = import + parent_count;
+        char * parent_path = get_nth_parent_dir(fpath, parent_count);
+
+        char * abs_path = ALLOC(char, strlen(parent_path) + strlen(child_path) + 1);
+        abs_path[0] = '\0';
+
+        strcat(abs_path, parent_path);
+        strcat(abs_path, child_path);
+
+        FREE(parent_path);
+
+        return abs_path;
+}
+
+// Returns "true" iff there's no errors.
+static bool evaluate_imports(struct List * tokens, struct List * tokenized_files)
 {
         for (int i = 0; i < tokens->length; ++i) {
                 const struct Token * curr_tok = get_list_elem_const(tokens, i);
@@ -239,6 +246,9 @@ static void evaluate_imports(struct List * tokens, struct List * tokenized_files
 
                 struct List import_tokens = tokenize_file(abs_import_path, tokenized_files);
 
+                ASSERT_OR_HANDLE(list_is_valid(&import_tokens), false,
+                                 "Unable to tokenize \"%s\".", abs_import_path);
+
                 list_remove(tokens, i);
                 list_insert_list(tokens, i, &import_tokens);
 
@@ -251,6 +261,8 @@ static void evaluate_imports(struct List * tokens, struct List * tokenized_files
                 // wouldn't be incremented when using "continue".
                 --i;
         }
+
+        return true;
 }
 
 // Converts "file_path" to a list of tokens. Additionally, it recursively
@@ -274,6 +286,9 @@ static struct List tokenize_file(char * file_path, struct List * tokenized_files
 
         const char * file_contents = file_to_string(file_path);
 
+        ASSERT_OR_HANDLE(file_contents, create_invalid_list(),
+                         "Unable to extract the contents of \"%s\".", file_path);
+
         LOG_DEBUG("\"%s\":\n\"%s\"\n\n", file_path, file_contents);
 
         struct List token_list = string_to_tokens(file_contents, file_path);
@@ -287,7 +302,10 @@ static struct List tokenize_file(char * file_path, struct List * tokenized_files
         ASSERT_OR_HANDLE(are_brackets_balanced(&token_list), create_invalid_list(),
                          "Unbalanced brackets in \"%s\".", file_path);
 
-        evaluate_imports(&token_list, tokenized_files);
+        bool imports_ok = evaluate_imports(&token_list, tokenized_files);
+
+        ASSERT_OR_HANDLE(imports_ok, create_invalid_list(),
+                         "Unable to evaluate the imports of \"%s\".", file_path);
 
         LOG_DEBUG("Tokens in \"%s\":\n", file_path);
         log_token_list(LOG_LVL_DEBUG, &token_list);
@@ -299,14 +317,6 @@ static struct List tokenize_file(char * file_path, struct List * tokenized_files
 static void free_str(void * str)
 {
         FREE(*(char **) str);
-}
-
-// Like "strdup", but it uses the "ALLOC" macro rather than "malloc".
-static char * duplicate_str(const char * str)
-{
-        char * new_str = ALLOC(char, strlen(str) + 1);
-        strcpy(new_str, str);
-        return new_str;
 }
 
 struct List lex(const char * file_path)
