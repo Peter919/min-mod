@@ -210,6 +210,10 @@ static char * get_nth_parent_dir(const char * fpath, int parent_count)
 
 static char * get_abs_import_path(const char * fpath, const char * import)
 {
+        if (import[0] != '.') {
+                return duplicate_str(import);
+        }
+
         int parent_count = 0;
         for (int i = 0; import[i] == '.'; ++i) {
                 ++parent_count;
